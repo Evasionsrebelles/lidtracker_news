@@ -1,14 +1,17 @@
 {
-  "timestamp": "2026-08-27T10:00:00Z",
+  "timestamp": "2026-08-27T09:55:35Z",
   "fr": [
+    "Bonjour à tous! Test des news",
     "Bienvenue sur le bulletin d'infos de Pokelids !",
     "Cet espace sera mis à jour à chaque nouveauté importante."
   ],
   "en": [
+    "Hello everyone! Testing news",
     "Welcome to the Pokelids news bulletin!",
     "This space will be updated with every major update."
   ],
   "jp": [
+    "皆さん、こんにちは！テストのお知らせ",
     "Pokelidsのお知らせへようこそ！",
     "重要な更新のたびにここを更新します。"
   ]
