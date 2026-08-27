@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokelids — Admin News</title>
+  <style>
+    :root {
+      --accent: #F16102;
+      --text: #1A1A2E;
+      --muted: #767676;
+      --border: #E5E5E5;
+      --success: #10B981;
+      --danger: #EF4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 16px 64px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      margin: 0 0 32px;
+    }
+
+    /* AUTHENTIFICATION */
+    .auth-section {
+      background: #F9F9F9;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+      display: none;
+    }
+
+    .auth-section.visible {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(241, 97, 2, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: #D94700;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #F3F4F6;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: #E5E7EB;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #FFFFFF;
+    }
+
+    .btn-danger:hover {
+      background: #DC2626;
+    }
+
+    /* FORMULAIRE ADMIN */
+    .admin-section {
+      background: #F9F9F9;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .admin-section.hidden {
+      display: none;
+    }
+
+    .news-input-wrapper {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-button {
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .tab-content textarea {
+      margin-bottom: 12px;
+    }
+
+    /* MESSAGES */
+    .message {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .message.visible {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.success {
+      background: #D1FAE5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+    }
+
+    .message.error {
+      background: #FEE2E2;
+      color: #7F1D1D;
+      border: 1px solid #FECACA;
+    }
+
+    .message.info {
+      background: #DBEAFE;
+      color: #0C2340;
+      border: 1px solid #BAE6FD;
+    }
+
+    .loader {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #FFFFFF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .timestamp-display {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .news-list {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+
+    .news-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .news-item:last-child {
+      border-bottom: none;
+    }
+
+    .news-item-text {
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .news-item-delete {
+      padding: 4px 8px;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .news-item-delete:hover {
+      background: #DC2626;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- LOGIN -->
+    <div class="auth-section visible" id="authSection">
+      <h1>🔐 Accès Admin</h1>
+      <p class="subtitle">Authentifiez-vous pour gérer les news</p>
+
+      <div class="form-group">
+        <label for="tokenInput">Token GitHub (PAT)</label>
+        <input 
+          type="password" 
+          id="tokenInput" 
+          placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        >
+        <p style="font-size: 12px; color: var(--muted); margin-top: 8px;">
+          ⚠️ <strong>Sécurité :</strong> Ce token est stocké localement dans votre navigateur. 
+          <a href="#" onclick="alert('Ce formulaire n\'envoie les données que directement à GitHub via HTTPS. Aucune donnée n\'est stockée sur un serveur intermédiaire.'); return false;" style="color: var(--accent);">En savoir plus</a>
+        </p>
+      </div>
+
+      <button class="btn-primary" onclick="authenticate()" style="width: 100%;">
+        Se connecter
+      </button>
+
+      <div id="tokenHelp" style="margin-top: 20px; padding: 16px; background: #F0F9FF; border-radius: 6px; font-size: 13px; line-height: 1.6;">
+        <strong>📝 Comment créer un token :</strong>
+        <ol style="margin: 8px 0; padding-left: 20px;">
+          <li>Allez sur <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a></li>
+          <li>Cliquez sur "Generate new token (classic)"</li>
+          <li>Donnez un nom (ex: "News Admin")</li>
+          <li>Cochez <strong>repo</strong> (accès complet aux repos privés et publics)</li>
+          <li>Cliquez "Generate token" et copiez-le ici</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="admin-section" id="adminSection">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1>✏️ Gérer les News</h1>
+          <p class="subtitle" id="userDisplay">—</p>
+        </div>
+        <button class="btn-secondary" onclick="logout()">Déconnexion</button>
+      </div>
+
+      <div id="messageContainer"></div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('add')">➕ Ajouter une news</button>
+        <button class="tab-button" onclick="switchTab('list')">📋 Voir les news</button>
+      </div>
+
+      <!-- TAB: AJOUTER -->
+      <div class="tab-content active" id="addTab">
+        <div class="form-group">
+          <label>Langue</label>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <button class="lang-tab active" data-lang="fr" onclick="selectLang(this, 'fr')">🇫🇷 Français</button>
+            <button class="lang-tab" data-lang="en" onclick="selectLang(this, 'en')">🇬🇧 English</button>
+            <button class="lang-tab" data-lang="jp" onclick="selectLang(this, 'jp')">🇯🇵 日本語</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="newsText">News à inscrire</label>
+          <textarea 
+            id="newsText" 
+            placeholder="Entrez votre actualité ici..."
+          ></textarea>
+          <div class="timestamp-display" id="tsDisplay">Horodatage : —</div>
+        </div>
+
+        <button class="btn-primary" onclick="addNews()" style="width: 100%;">
+          <span id="addBtnText">Publier la news</span>
+        </button>
+      </div>
+
+      <!-- TAB: LISTER -->
+      <div class="tab-content" id="listTab">
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">
+          Cliquez sur une news pour la supprimer
+        </p>
+        <div class="news-list" id="newsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIG
+    const GITHUB_OWNER = 'Evasionsrebelles';
+    const GITHUB_REPO = 'lidtracker_news';
+    const FILE_PATH = 'news.json';
+    const BRANCH = 'main';
+
+    let token = null;
+    let newsData = null;
+    let selectedLang = 'fr';
+
+    // ===== AUTHENTIFICATION =====
+    function authenticate() {
+      const input = document.getElementById('tokenInput');
+      const tokenValue = input.value.trim();
+
+      if (!tokenValue) {
+        showMessage('Veuillez entrer un token', 'error');
+        return;
+      }
+
+      // Test du token en fetchant le contenu actuel
+      fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`,
+        {
+          headers: {
+            'Authorization': `token ${tokenValue}`,
+            'Accept': 'application/vnd.github.v3.raw'
+          }
+        }
+      )
+      .then(res => {
+        if (!res.ok) throw new Error('Token invalide ou accès refusé');
+        return res.json();
+      })
+      .then(() => {
+        token = tokenValue;
+        localStorage.setItem('adminToken', token);
+        document.getElementById('authSection').classList.remove('visible');
+        document.getElementById('adminSection').classList.remove('hidden');
+        loadNews();
+        updateTimestamp();
+        showMessage('✅ Authentification réussie !', 'success');
+      })
+      .catch(err => {
+        showMessage('❌ ' + err.message, 'error');
+      });
+    }
+
+    function logout() {
+      token = null;
+      newsData = null;
+      localStorage.removeItem('adminToken');
+      document.getElementById('authSection').classList.add('visible');
+      document.getElementById('adminSection').classList.add('hidden');
+      document.getElementById('tokenInput').value = '';
+      showMessage('Déconnexion effectuée', 'info');
+    }
+
+    // ===== GESTION DES NEWS =====
+    function loadNews() {
+      fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`,
+        {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      )
+      .then(res => res.json())
+      .then(data => {
+        const content = atob(data.content);
+        newsData = JSON.parse(content);
+        newsData._sha = data.sha; // Garder le SHA pour l'update
+        renderNewsList();
+      })
+      .catch(err => showMessage('Erreur : ' + err.message, 'error'));
+    }
+
+    function addNews() {
+      const text = document.getElementById('newsText').value.trim();
+
+      if (!text) {
+        showMessage('Veuillez entrer une news', 'error');
+        return;
+      }
+
+      const btn = document.querySelector('.btn-primary');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span> Publication...';
+
+      // Ajouter la news à la langue sélectionnée
+      if (!newsData[selectedLang]) {
+        newsData[selectedLang] = [];
+      }
+      newsData[selectedLang].unshift(text);
+
+      // Mettre à jour l'horodatage
+      newsData.timestamp = new Date().toISOString();
+
+      // Préparer le contenu à envoyer
+      const newContent = JSON.stringify(newsData, null, 2);
+      const encodedContent = btoa(newContent);
+
+      // Envoyer à GitHub
+      fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `[${selectedLang.toUpperCase()}] Ajout news: ${text.substring(0, 50)}...`,
+            content: encodedContent,
+            sha: newsData._sha,
+            branch: BRANCH
+          })
+        }
+      )
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur lors de la mise à jour');
+        return res.json();
+      })
+      .then(data => {
+        newsData._sha = data.commit.tree.sha;
+        document.getElementById('newsText').value = '';
+        loadNews();
+        showMessage('✅ News publiée avec succès !', 'success');
+        btn.disabled = false;
+        btn.innerHTML = '<span id="addBtnText">Publier la news</span>';
+      })
+      .catch(err => {
+        showMessage('❌ Erreur : ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span id="addBtnText">Publier la news</span>';
+      });
+    }
+
+    function renderNewsList() {
+      const container = document.getElementById('newsList');
+      container.innerHTML = '';
+
+      if (!newsData || !newsData[selectedLang] || newsData[selectedLang].length === 0) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted);">Aucune news pour cette langue</div>';
+        return;
+      }
+
+      newsData[selectedLang].forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'news-item';
+        div.innerHTML = `
+          <div class="news-item-text">${escapeHtml(item)}</div>
+          <button class="news-item-delete" onclick="deleteNews(${idx})">Supprimer</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function deleteNews(index) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) return;
+
+      newsData[selectedLang].splice(index, 1);
+      newsData.timestamp = new Date().toISOString();
+
+      const newContent = JSON.stringify(newsData, null, 2);
+      const encodedContent = btoa(newContent);
+
+      fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `[${selectedLang.toUpperCase()}] Suppression news`,
+            content: encodedContent,
+            sha: newsData._sha,
+            branch: BRANCH
+          })
+        }
+      )
+      .then(res => res.json())
+      .then(data => {
+        newsData._sha = data.commit.tree.sha;
+        loadNews();
+        showMessage('✅ News supprimée', 'success');
+      })
+      .catch(err => showMessage('❌ Erreur : ' + err.message, 'error'));
+    }
+
+    // ===== UI HELPERS =====
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabName + 'Tab').classList.add('active');
+      event.target.classList.add('active');
+
+      if (tabName === 'list') loadNews();
+    }
+
+    function selectLang(btn, lang) {
+      selectedLang = lang;
+      document.querySelectorAll('.lang-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (document.getElementById('listTab').classList.contains('active')) {
+        renderNewsList();
+      }
+      updateTimestamp();
+    }
+
+    function updateTimestamp() {
+      const now = new Date();
+      const formatted = now.toLocaleString('fr-FR', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      document.getElementById('tsDisplay').textContent = 'Horodatage : ' + formatted;
+    }
+
+    function showMessage(msg, type) {
+      const container = document.getElementById('messageContainer');
+      const div = document.createElement('div');
+      div.className = `message ${type} visible`;
+      div.textContent = msg;
+      container.appendChild(div);
+      setTimeout(() => div.remove(), 5000);
+    }
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // ===== INIT =====
+    window.addEventListener('load', () => {
+      const savedToken = localStorage.getItem('adminToken');
+      if (savedToken) {
+        document.getElementById('tokenInput').value = savedToken;
+        authenticate();
+      }
+    });
+  </script>
+
+</body>
+</html>
