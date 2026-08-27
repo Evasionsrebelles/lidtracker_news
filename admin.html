@@ -461,7 +461,10 @@
     }
 
     // ===== GESTION DES NEWS =====
+    let currentFileSha = null;
+
     function loadNews() {
+      // Étape 1 : Récupérer le SHA du fichier pour les commits
       fetch(
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}?ref=${BRANCH}`,
         {
@@ -472,21 +475,35 @@
         }
       )
       .then(res => {
-        if (!res.ok) throw new Error('Erreur lors du chargement des news');
+        if (!res.ok) throw new Error('Erreur lors du chargement du SHA');
         return res.json();
       })
       .then(data => {
+        currentFileSha = data.sha; // Stocker le SHA global
+        
+        // Étape 2 : Charger le contenu brut directement
+        return fetch(
+          `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${BRANCH}/${FILE_PATH}`
+        );
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur lors du chargement du contenu');
+        return res.text();
+      })
+      .then(text => {
         try {
-          // Décoder le contenu base64
-          const decodedContent = atob(data.content);
-          newsData = JSON.parse(decodedContent);
-          newsData._sha = data.sha; // Garder le SHA pour l'update
+          newsData = JSON.parse(text);
+          newsData._sha = currentFileSha; // Ajouter le SHA récupéré
           renderNewsList();
         } catch (e) {
-          throw new Error('Impossible de parser le fichier news.json: ' + e.message);
+          console.error('Erreur parsing JSON:', e);
+          throw new Error('Le fichier news.json n\'est pas un JSON valide: ' + e.message);
         }
       })
-      .catch(err => showMessage('Erreur : ' + err.message, 'error'));
+      .catch(err => {
+        console.error('Erreur complète:', err);
+        showMessage('Erreur : ' + err.message, 'error');
+      });
     }
 
     function addNews() {
@@ -494,6 +511,11 @@
 
       if (!text) {
         showMessage('Veuillez entrer une news', 'error');
+        return;
+      }
+
+      if (!currentFileSha) {
+        showMessage('Erreur : SHA du fichier non disponible. Rechargez la page.', 'error');
         return;
       }
 
@@ -526,7 +548,7 @@
           body: JSON.stringify({
             message: `[${selectedLang.toUpperCase()}] Ajout news: ${text.substring(0, 50)}...`,
             content: encodedContent,
-            sha: newsData._sha,
+            sha: currentFileSha,
             branch: BRANCH
           })
         }
@@ -540,7 +562,7 @@
         return res.json();
       })
       .then(data => {
-        newsData._sha = data.content.sha;
+        currentFileSha = data.content.sha;
         document.getElementById('newsText').value = '';
         loadNews();
         showMessage('✅ News publiée avec succès !', 'success');
@@ -578,6 +600,11 @@
     function deleteNews(index) {
       if (!confirm('Êtes-vous sûr de vouloir supprimer cette news ?')) return;
 
+      if (!currentFileSha) {
+        showMessage('Erreur : SHA du fichier non disponible. Rechargez la page.', 'error');
+        return;
+      }
+
       newsData[selectedLang].splice(index, 1);
       newsData.timestamp = new Date().toISOString();
 
@@ -595,7 +622,7 @@
           body: JSON.stringify({
             message: `[${selectedLang.toUpperCase()}] Suppression news`,
             content: encodedContent,
-            sha: newsData._sha,
+            sha: currentFileSha,
             branch: BRANCH
           })
         }
@@ -609,7 +636,7 @@
         return res.json();
       })
       .then(data => {
-        newsData._sha = data.content.sha;
+        currentFileSha = data.content.sha;
         loadNews();
         showMessage('✅ News supprimée', 'success');
       })
