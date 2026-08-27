@@ -426,15 +426,17 @@
         {
           headers: {
             'Authorization': `token ${tokenValue}`,
-            'Accept': 'application/vnd.github.v3.raw'
+            'Accept': 'application/vnd.github.v3+json'
           }
         }
       )
       .then(res => {
-        if (!res.ok) throw new Error('Token invalide ou accès refusé');
+        if (!res.ok) throw new Error('Token invalide ou accès refusé (status: ' + res.status + ')');
         return res.json();
       })
-      .then(() => {
+      .then(data => {
+        // Vérifier que le SHA est présent
+        if (!data.sha) throw new Error('Impossible de récupérer le SHA du fichier');
         token = tokenValue;
         localStorage.setItem('adminToken', token);
         document.getElementById('authSection').classList.remove('visible');
@@ -469,12 +471,20 @@
           }
         }
       )
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur lors du chargement des news');
+        return res.json();
+      })
       .then(data => {
-        const content = atob(data.content);
-        newsData = JSON.parse(content);
-        newsData._sha = data.sha; // Garder le SHA pour l'update
-        renderNewsList();
+        try {
+          // Décoder le contenu base64
+          const decodedContent = atob(data.content);
+          newsData = JSON.parse(decodedContent);
+          newsData._sha = data.sha; // Garder le SHA pour l'update
+          renderNewsList();
+        } catch (e) {
+          throw new Error('Impossible de parser le fichier news.json: ' + e.message);
+        }
       })
       .catch(err => showMessage('Erreur : ' + err.message, 'error'));
     }
@@ -522,11 +532,15 @@
         }
       )
       .then(res => {
-        if (!res.ok) throw new Error('Erreur lors de la mise à jour');
+        if (!res.ok) {
+          return res.json().then(err => {
+            throw new Error('GitHub API: ' + (err.message || 'Erreur ' + res.status));
+          });
+        }
         return res.json();
       })
       .then(data => {
-        newsData._sha = data.commit.tree.sha;
+        newsData._sha = data.content.sha;
         document.getElementById('newsText').value = '';
         loadNews();
         showMessage('✅ News publiée avec succès !', 'success');
@@ -534,6 +548,7 @@
         btn.innerHTML = '<span id="addBtnText">Publier la news</span>';
       })
       .catch(err => {
+        console.error('Erreur:', err);
         showMessage('❌ Erreur : ' + err.message, 'error');
         btn.disabled = false;
         btn.innerHTML = '<span id="addBtnText">Publier la news</span>';
@@ -585,13 +600,23 @@
           })
         }
       )
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(err => {
+            throw new Error('GitHub API: ' + (err.message || 'Erreur ' + res.status));
+          });
+        }
+        return res.json();
+      })
       .then(data => {
-        newsData._sha = data.commit.tree.sha;
+        newsData._sha = data.content.sha;
         loadNews();
         showMessage('✅ News supprimée', 'success');
       })
-      .catch(err => showMessage('❌ Erreur : ' + err.message, 'error'));
+      .catch(err => {
+        console.error('Erreur:', err);
+        showMessage('❌ Erreur : ' + err.message, 'error');
+      });
     }
 
     // ===== UI HELPERS =====
